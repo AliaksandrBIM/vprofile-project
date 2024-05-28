@@ -1,0 +1,53 @@
+```bash
+version: '3.8'  # Указывает версию Docker Compose
+
+services:
+  database:
+    build:
+      context: ./Docker-files/db  # Путь к директории с Dockerfile для сборки образа
+    image: enecabim/microservicedb  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    container_name: vprodb  # Название контейнера
+    ports:
+      - "3306:3306"  # Маппинг порта 3306 хоста на порт 3306 контейнера
+    volumes:
+      - mysql_data:/var/lib/mysql  # Монтирует именованный том в директорию БД внутри контейнера
+    environment:
+      - MYSQL_ROOT_PASSWORD=vprodbpass  # Задает переменную окружения для пароля root
+
+  memcache:
+    image: memcached  # Использует официальный образ memcached
+    container_name: vprocache01  # Название контейнера
+    ports:
+      - "11211:11211"  # Маппинг порта 11211 хоста на порт 11211 контейнера
+
+  rabbitmq:
+    image: rabbitmq  # Использует официальный образ RabbitMQ
+    container_name: vpromq01  # Название контейнера
+    ports:
+      - "15672:15672"  # Маппинг порта 15672 хоста на порт 15672 контейнера (порт веб-интерфейса RabbitMQ)
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest  # Задает переменную окружения для пользователя RabbitMQ
+      - RABBITMQ_DEFAULT_PASS=guest  # Задает переменную окружения для пароля пользователя RabbitMQ
+
+  application:
+    build:
+      context: ./Docker-files/app  # Путь к директории с Dockerfile для сборки образа
+    image: enecabim/microserviceapp  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    container_name: vproapp  # Название контейнера
+    ports:
+      - "8080:8080"  # Маппинг порта 8080 хоста на порт 8080 контейнера
+    volumes:
+      - vproapp_data:/usr/local/tomcat/webapps  # Монтирует именованный том в директорию веб-приложений Tomcat внутри контейнера
+
+  webserver:
+    build:
+      context: ./Docker-files/web  # Путь к директории с Dockerfile для сборки образа
+    image: enecabim/microservicewev  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    container_name: vproweb  # Название контейнера
+    ports:
+      - "80:80"  # Маппинг порта 80 хоста на порт 80 контейнера
+
+volumes:  # Определение именованных томов, используемых в этом файле Compose
+  mysql_data: {}  # Именованный том для хранения данных MySQL
+  vproapp_data: {}  # Именованный том для хранения данных приложения
+```
