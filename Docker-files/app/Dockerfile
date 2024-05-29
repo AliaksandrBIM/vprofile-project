@@ -2,7 +2,7 @@
 FROM openjdk:11 AS build_image
 RUN apt-get update && apt-get install -y maven git
 # Клонируем репозиторий
-RUN git clone https://github.com/AliaksandrBIM/vprofile-project.git
+RUN git clone --branch docker https://github.com/tobbie/vprofile-project.git   
 # Переходим в папку проекта, переключаемся на нужную ветку и запускаем билд
 WORKDIR vprofile-project
 RUN git checkout docker && mvn clean install
