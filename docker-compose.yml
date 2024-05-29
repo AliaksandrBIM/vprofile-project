@@ -1,51 +1,64 @@
-version: '3.8'  # Указывает версию Docker Compose
+version: '3.9'  # Обновление до актуальной версии Docker Compose
 
 services:
   database:
     build:
       context: ./Docker-files/db  # Путь к директории с Dockerfile для сборки образа
-    image: enecabim/microservicedb  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    image: enecabim/microservicedb  # Имя образа для сохранения (локально или в DockerHub)
     container_name: vprodb  # Название контейнера
     ports:
       - "3306:3306"  # Маппинг порта 3306 хоста на порт 3306 контейнера
     volumes:
       - mysql_data:/var/lib/mysql  # Монтирует именованный том в директорию БД внутри контейнера
     environment:
-      - MYSQL_ROOT_PASSWORD=vprodbpass  # Задает переменную окружения для пароля root
+      - MYSQL_ROOT_PASSWORD=vprodbpass  # Устанавливает переменную окружения для пароля root
+      - MYSQL_DATABASE=microservices  # Устанавливает переменную окружения для имени базы данных
+    restart: always  # Автоматический перезапуск контейнера в случае остановки
 
   memcache:
-    image: memcached  # Использует официальный образ memcached
+    image: memcached:latest  # Использует официальный образ memcached
     container_name: vprocache01  # Название контейнера
     ports:
       - "11211:11211"  # Маппинг порта 11211 хоста на порт 11211 контейнера
+    restart: always  # Автоматический перезапуск контейнера в случае остановки
 
   rabbitmq:
-    image: rabbitmq  # Использует официальный образ RabbitMQ
+    image: rabbitmq:latest  # Использует официальный образ RabbitMQ
     container_name: vpromq01  # Название контейнера
     ports:
       - "15672:15672"  # Маппинг порта 15672 хоста на порт 15672 контейнера (порт веб-интерфейса RabbitMQ)
     environment:
-      - RABBITMQ_DEFAULT_USER=guest  # Задает переменную окружения для пользователя RabbitMQ
-      - RABBITMQ_DEFAULT_PASS=guest  # Задает переменную окружения для пароля пользователя RabbitMQ
+      - RABBITMQ_DEFAULT_USER=guest  # Устанавливает переменную окружения для пользователя RabbitMQ
+      - RABBITMQ_DEFAULT_PASS=guest  # Устанавливает переменную окружения для пароля пользователя RabbitMQ
+    restart: always  # Автоматический перезапуск контейнера в случае остановки
 
   application:
     build:
       context: ./Docker-files/app  # Путь к директории с Dockerfile для сборки образа
-    image: enecabim/microserviceapp  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    image: enecabim/microserviceapp  # Имя образа для сохранения (локально или в DockerHub)
     container_name: vproapp  # Название контейнера
     ports:
       - "8080:8080"  # Маппинг порта 8080 хоста на порт 8080 контейнера
     volumes:
       - vproapp_data:/usr/local/tomcat/webapps  # Монтирует именованный том в директорию веб-приложений Tomcat внутри контейнера
+    depends_on:
+      - database  # Указывает, что этот сервис зависит от сервиса database
+      - memcache  # Указывает, что этот сервис зависит от сервиса memcache
+      - rabbitmq  # Указывает, что этот сервис зависит от сервиса rabbitmq
+    restart: always  # Автоматический перезапуск контейнера в случае остановки
 
   webserver:
     build:
       context: ./Docker-files/web  # Путь к директории с Dockerfile для сборки образа
-    image: enecabim/microservicewev  # Называет и сохраняет собранный образ (локально или в DockerHub)
+    image: enecabim/microservicewev  # Имя образа для сохранения (локально или в DockerHub)
     container_name: vproweb  # Название контейнера
     ports:
       - "80:80"  # Маппинг порта 80 хоста на порт 80 контейнера
+    depends_on:
+      - application  # Указывает, что этот сервис зависит от сервиса application
+    restart: always  # Автоматический перезапуск контейнера в случае остановки
 
-volumes:  # Определение именованных томов, используемых в этом файле Compose
+volumes:
   mysql_data: {}  # Именованный том для хранения данных MySQL
   vproapp_data: {}  # Именованный том для хранения данных приложения
+
